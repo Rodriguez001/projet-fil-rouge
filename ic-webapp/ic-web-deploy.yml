@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: ic-webapp
+    env: prod
+  name: ic-webapp
+  namespace: ic-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ic-webapp
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ic-webapp
+    spec:
+      containers:
+      - image: rodriguez003/ic-webapp:1.0
+        name: ic-webapp
+        env:
+        - name: ODOO_URL
+          value: http://$(HOST_IP):30069/
+        - name: PGADMIN_URL
+          value: http://$(HOST_IP):30050/
+        ports:
+        - containerPort: 8080
+          name: ic-webapp
+status: {}
