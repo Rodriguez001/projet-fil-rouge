@@ -1,0 +1,267 @@
+# Pour afficher l''ensemble des noeuds
+
+kubectl get noeuds
+
+# Pour deployer des pods de façon déclarative avec des fichiers manifests
+
+kubectl apply -f <chemin_vers_manifest.yml>
+
+# pour voir les pods
+
+kubectl get pod
+
+# pour faire un inspect comme dans docker
+
+kubectl describe pod [name_of_pod]
+
+# pour supprimer un pod
+
+kubectl delete -f < manifest_file.yml >
+
+# pour lancer la creation d'un deployment
+
+kubectl apply -f <chemin_vers_deployer.yml>
+
+# pour afficher l''ensemble des deployments
+
+kubectl get deployments.apps
+
+# pour afficher l''ensemble des replications
+
+kubectl get replicasets.apps -o wide
+
+# Créer le pod en ligne de command(ici restart=never permet de dire que l'on veut créer un pod et non un deployement)
+
+kubectl run --image=mmumshad/simple-webapp-color --env="APP_COLOR=red" --restart=Never simple-webapp-color
+
+# on l'expose sur un port
+
+kubectl port-forward simple-webapp-color 8080:8080 --address 0.0.0.0
+
+# Pour creer un deployment
+
+kubectl create deployment --image=nginx:1.18.0 nginx-deployment
+
+# On va scaler pour créer les replicas
+
+kubectl scale --replicas=2 deployment/nginx:1.18.0
+
+# On verifie le deployement et replicas
+
+kubectl get deploy -o wide
+kubectl get replicasets.apps -o wide
+
+# LA GESTION DES RESEAUX
+
+# voir l'ensemble des pods avec leurs labels
+
+kubectl get po --show-labels
+
+# filtrer par rapport à un label
+
+# les pods dont le label = "nginx"
+
+kubectl get pods -l app=nginx --namespace=production
+#label n'appartenant pas à la production
+kubectl get pods -l env!=nginx --namespace=production
+
+# pods dont le label env à une valeur dans une liste
+
+kubectl get pods -l 'env in (production)' --namespace=production
+
+# le contraire
+
+kubectl get pods -l 'env notin (production)' --namespace=production
+
+# LES SERVICES
+
+# Création d'un service de type Nodeport
+
+# 1- d'abord un namespace de maniere declarative avec le fichier .yml
+
+kubectl apply -f [name_of_file_namespace.yml]
+
+# affichage d'un namespace particulier
+
+kubectl get all -n kube-node-lease
+
+# On peut créer le pod et préciser le namespace avec la cmd ou de maniere déclarative
+
+kubectl apply -f pod-red.yml -n production
+
+# voir l'ensemble des pods sur un namespace
+
+kubectl get pod -n [namespace]
+
+# Redaction du manifest d'un service de type Node-port
+
+# lancement d'un service grace au fichier manifest
+
+kubectl apply -f [name_of_file_service] -n [namespace]
+kubectl -n [namespace] describe svc [service_name]
+
+# inspecter le service
+
+kubectl get [service_name] -n [namespace]
+
+# Ingress – Problématique
+
+# Pour créer un cluster local
+
+minikube start
+
+# Autorisation du service ingress
+
+minikube addons enable ingress
+
+# verifier que l'ingress controller marche
+
+kubectl get pods -n ingress-nginx
+
+# Notre application ici c'est un déploiement
+
+kubectl create deployment web --image=gcr.io/google-samples/hello-app:1.0
+
+# On expose le deployment = creation d'un service nodeport qui va le desservir
+
+kubectl expose deployment web --type=NodePort --port=8080
+
+# verifier la creation du service
+
+kubectl get service web
+
+# Pour voir avec quelle url on va visiter le deployment
+
+minikube service web --url # http://10.0.2.15:30526
+
+# création des règles que l''ingress controller devra appliquer
+
+# Ensuite on apply
+
+kubectl apply -f exemple-ingress.yml
+
+# on peut lister nos règles
+
+kubectl get ingress
+
+# editer le fichier /etc/hosts et y ajouter
+
+10.0.2.15 hello-world.info
+
+# pour tester
+
+curl hello-world.info
+curl --resolve "hello-world.info:80:$( minikube ip )" -i http://hello-world.info
+
+# On crée un second deployment
+
+kubectl create deployment web2 --image=gcr.io/google-samples/hello-app:2.0
+
+# On crée le service
+
+kubectl expose deployment web2 --port=8080 --type=NodePort
+
+# On ajoute une règle dans le fichier ...ingress.yml et on apply
+
+kubectl apply -f [ingress_file.yml]
+
+# On accede à la 1ere version
+
+curl --resolve "hello-world.info:80:$( minikube ip )" -i http://hello-world.info
+
+# On accède à la 2eme version
+
+curl --resolve "hello-world.info:80:$( minikube ip )" -i http://hello-world.info/v2
+
+# LA GESTION DU STOCKAGE
+
+# Apres avoir créer les fichiers .yml, on lance les apply
+kubectl apply -f [nom_de_ressources]
+# On interroge
+kubectl get pv 
+kubectl describe pod [nom_du_pod]
+kubectl describe pv [nom_pv]
+# l'ordre de creation pour les volumes
+mysql-volume.yml
+pv.yml
+pvc.yml
+mysql-pv.yml
+
+## Introduction à HELM
+
+# use the link below to install Helm
+https://github.com/diranetafen/supinfo-kubernetes/tree/minikube/tp07#-install-helm-
+
+# On peut verifier l'installation en listant les charts
+helm ls 
+# installer la chart de wordpress avec helm v2
+helm install stable/wordpress --name wordpress -f values.yml
+# On peut verifier le resultat
+kubectl get pod
+kubectl get svc
+
+# HELM v3
+# Apres installation
+# Installation
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+chmod 700 get_helm.sh
+yum install openssl -y
+./get_helm.sh
+helm version
+# On recupere le repository
+# Déploiement WordPress
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install wordpress bitnami/wordpress -f https://raw.githubusercontent.com/Rodriguez001/kubernetes-Labs/main/tp6/values.yml
+kubectl get svc
+
+# Mini-projet : installation de Wordpress
+pour generer un manifest
+# ajouter à la fin 
+kubectl create namespace [namespace] --dry-run=client -o yaml > [dans un fichier.yml] 
+# pour voir si un svc fonction
+kubectl describe -f [fichier.yml]
+# verifier tout ses objets sur un namespace ici "wordpress"
+kubectl get all -n wordpress
+# creation d'un  compte AWS
+
+## Pour avoir le context 
+kubectl config current-context
+
+## Labo sur AWS avec vm
+sudo apt update
+sudo apt install -y unzip
+export AWS_ACCESS_KEY_ID=
+export AWS_SECRET_ACCESS_KEY=
+export AWS_DEFAULT_REGION=us-east-1
+
+# install eksctl
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+
+# install awscli
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+# install kubectl
+curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.17.9/2020-08-04/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin
+
+# install du cluster
+eksctl create cluster --name=eazy --ssh-access --ssh-public-key devops --nodes=1 --nodes-max 5 --asg-access
+
+# retrieve credentials
+eksctl utils write-kubeconfig --name=eazy --kubeconfig=$HOME/eazy
+export KUBECONFIG=$HOME/eazy
+
+# install k8s autocomplete
+sudo echo 'source <(kubectl completion bash)' >> ${HOME}/.bashrc && source ${HOME}/.bashrc
+
+# test cluster
+kubectl create namespace my-namespace
+kubectl apply -f sample-service.yaml
+kubectl get all -n my-namespace
+POD=$(kubectl get -n my-namespace pod -l app=my-app -o jsonpath="{.items[0].metadata.name}")
+kubectl -n my-namespace exec -it $POD  -n my-namespace -- /bin/bash
+curl  my-service.my-namespace.svc.cluster.local
